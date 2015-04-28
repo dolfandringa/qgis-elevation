@@ -18,3 +18,16 @@ The installation can be installed by selecting Plugins->Manage and Install Plugi
 followed by a click on "Get more".
 
 Installation from the source tarball is also possible.
+
+Usage in python scripts
+=======================
+
+You can also get the elevation from python scripts. 
+
+```
+from elevation.Elevation import Elevation #import the plugin
+elev = Elevation(iface) #initialise the plugin
+ext = iface.mapCanvas().extent() #get the current map canvas extent
+point = QgsPoint(ext.xMinimum(),ext.yMinimum()) #make a point for the bottom left corner
+elev.get_elevation(point) #get the elevation for the point
+```

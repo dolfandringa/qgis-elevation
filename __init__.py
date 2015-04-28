@@ -28,7 +28,7 @@ def name():
 def description():
 	return "Obtain and display point elevation data using Google Maps"
 def version(): 
-	return "Version 0.4.0" 
+	return "Version 0.5.0" 
 def qgisMinimumVersion():
 	return "2.0"
 def classFactory(iface): 

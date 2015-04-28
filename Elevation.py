@@ -46,8 +46,8 @@ class Elevation:
 		self.layerid = ''			
 	
 	def initGui(self):  
-		self.obtainAction = QAction(QIcon(":/plugins/elevation/elevation_icon.png"), QCoreApplication.translate('Elevation', "&Obtain Elevation"), self.iface.mainWindow())       
-		self.aboutAction = QAction(QIcon(":/plugins/elevation/about_icon.png"), QCoreApplication.translate('Elevation', "&About"), self.iface.mainWindow())    
+		self.obtainAction = QAction(QIcon(":/plugins/elevation/elevation_icon.png"), QCoreApplication.translate('Elevation', "&Obtain Elevation"), self.iface.mainWindow())	   
+		self.aboutAction = QAction(QIcon(":/plugins/elevation/about_icon.png"), QCoreApplication.translate('Elevation', "&About"), self.iface.mainWindow())	
 		self.iface.addPluginToMenu("Elevation", self.obtainAction)
 		self.iface.addPluginToMenu("Elevation", self.aboutAction)
 		self.iface.addToolBarIcon(self.obtainAction)
@@ -70,13 +70,13 @@ class Elevation:
 		chk = self.check_settings()
 		if len(chk) :
 			QMessageBox.information(self.iface.mainWindow(), QCoreApplication.translate('Elevation', "Elevation plugin error"), chk)   
-			return                    
+			return					
 		sb = self.iface.mainWindow().statusBar()
 		sb.showMessage(QCoreApplication.translate('Elevation', "Click on the map to obtain the elevation"))
 		ct = ClickTool(self.iface,  self.obtain_action);
 		self.iface.mapCanvas().setMapTool(ct)
 
-	def obtain_action(self, point) :
+	def get_elevation(self,point):
 		epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
 		self.reprojectgeographic = QgsCoordinateTransform(self.iface.mapCanvas().mapRenderer().destinationCrs(), epsg4326)
 		pt = self.reprojectgeographic.transform(point)
@@ -88,34 +88,40 @@ class Elevation:
 		try:
 			results = json.loads(jsonresult).get('results')
 			if 0 < len(results):
-				elevation = int(round(results[0].get('elevation')))
-				# save point
-				self.save_point(point, elevation)
-				#find marker
-				marker = 'http://bit.ly/aUwrKs'
-				for x in range(0, 1000):
-					if numericmarkers.has_key(elevation+x) :
-						marker = numericmarkers.get(elevation+x)
-						break
-					if numericmarkers.has_key(elevation-x):
-						marker = numericmarkers.get(elevation-x)
-						break
-				# create map
-				image = tempfile.mkstemp(suffix='png')
-				os.close(image[0])
-				urllib.urlretrieve('http://maps.google.com/maps/api/staticmap?size=640x480&maptype=terrain\&markers=icon:'+marker+'|'+str(pt[1])+','+str(pt[0])+'&mobile=true&sensor=false', image[1])
-				QgsMessageLog.instance().logMessage('http://maps.google.com/maps/api/staticmap?size=640x4802&maptype=terrain\&markers=icon:'+marker+'|'+str(pt[1])+','+str(pt[0])+'&mobile=true&sensor=false')
-				dlg = ImageDialog()
-				dlg.image.setPixmap(QPixmap(image[1]))
-				dlg.show()
-				dlg.exec_()
-				if os.path.exists(image[1]):
-					os.unlink(image[1])
+				return int(round(results[0].get('elevation')))
 			else:
 				QMessageBox.warning(self.iface.mainWindow(), 'Elevation', 'HTTP GET Request failed.', QMessageBox.Ok, QMessageBox.Ok)
 		except ValueError, e:
 			QMessageBox.warning(self.iface.mainWindow(), 'Elevation', 'JSON decode failed: '+str(jsonresult), QMessageBox.Ok, QMessageBox.Ok)
- 
+
+	def obtain_action(self, point) :
+		elevation = self.get_elevation(point)
+		if elevation == None:
+			QMessageBox.warning(self.iface.mainWindow(), 'Elevation', 'Failed to get elevation.', QMessageBox.Ok, QMessageBox.Ok)
+		else:
+			# save point
+			self.save_point(point, elevation)
+			#find marker
+			marker = 'http://bit.ly/aUwrKs'
+			for x in range(0, 1000):
+				if numericmarkers.has_key(elevation+x) :
+					marker = numericmarkers.get(elevation+x)
+					break
+				if numericmarkers.has_key(elevation-x):
+					marker = numericmarkers.get(elevation-x)
+					break
+			# create map
+			image = tempfile.mkstemp(suffix='png')
+			os.close(image[0])
+			urllib.urlretrieve('http://maps.google.com/maps/api/staticmap?size=640x480&maptype=terrain\&markers=icon:'+marker+'|'+str(pt[1])+','+str(pt[0])+'&mobile=true&sensor=false', image[1])
+			QgsMessageLog.instance().logMessage('http://maps.google.com/maps/api/staticmap?size=640x4802&maptype=terrain\&markers=icon:'+marker+'|'+str(pt[1])+','+str(pt[0])+'&mobile=true&sensor=false')
+			dlg = ImageDialog()
+			dlg.image.setPixmap(QPixmap(image[1]))
+			dlg.show()
+			dlg.exec_()
+			if os.path.exists(image[1]):
+				os.unlink(image[1])
+
 	# save point to file, point is in project's crs
 	def save_point(self, point, elevation):
 		# create and add the point layer if not exists or not set
@@ -162,4 +168,4 @@ class Elevation:
 
 if __name__ == "__main__":
 	pass
-    
+	
