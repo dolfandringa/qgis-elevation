@@ -95,6 +95,9 @@ class Elevation:
 			QMessageBox.warning(self.iface.mainWindow(), 'Elevation', 'JSON decode failed: '+str(jsonresult), QMessageBox.Ok, QMessageBox.Ok)
 
 	def obtain_action(self, point) :
+		epsg4326 = QgsCoordinateReferenceSystem(4326, QgsCoordinateReferenceSystem.EpsgCrsId)
+		self.reprojectgeographic = QgsCoordinateTransform(self.iface.mapCanvas().mapRenderer().destinationCrs(), epsg4326)
+		pt = self.reprojectgeographic.transform(point)
 		elevation = self.get_elevation(point)
 		if elevation == None:
 			QMessageBox.warning(self.iface.mainWindow(), 'Elevation', 'Failed to get elevation.', QMessageBox.Ok, QMessageBox.Ok)
